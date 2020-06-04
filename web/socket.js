@@ -83,6 +83,7 @@ class Socket{
 							}),
 							queryHandler.insertMessages(data)						
 						]);
+						this.io.to(socket.id).emit(`add-message-response`,data);
 						// this.io.to(toSocketId).emit(`add-message-response`,data.message); 
 					} catch (error) {
 						this.io.to(socket.id).emit(`add-message-response`,{
