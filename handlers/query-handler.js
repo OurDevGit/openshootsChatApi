@@ -171,6 +171,7 @@ class QueryHandler {
 				};
 
 				DB.collection('messages').find(data, { "participants": 1, "meta": 1 })
+					.sort({"meta.date": -1})
 					.toArray((error, result) => {
 
 						if (error) {

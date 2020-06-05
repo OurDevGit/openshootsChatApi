@@ -76,11 +76,14 @@ class Socket{
 					}); 
 				}else{
 					try{
-						const [toSocketId, messageResult ] = await Promise.all([
-							queryHandler.getUserInfo({
-								uid: data.message.toUserId,
-								socketId: true
-							}),
+						// const [toSocketId, messageResult ] = await Promise.all([
+						// 	queryHandler.getUserInfo({
+						// 		uid: data.message.toUserId,
+						// 		socketId: true
+						// 	}),
+						// 	queryHandler.insertMessages(data)						
+						// ]);
+						const [messageResult ] = await Promise.all([
 							queryHandler.insertMessages(data)						
 						]);
 						this.io.to(socket.id).emit(`add-message-response`,data);
