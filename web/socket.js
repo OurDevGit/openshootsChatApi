@@ -39,7 +39,8 @@ class Socket{
 						this.io.to(socket.id).emit(`chat-list-response`, {
 							error : false,
 							singleUser : false,
-							chatList : chatlistResponse
+							chatList : chatlistResponse,
+							type: "list"
 						});
 						// socket.broadcast.emit(`chat-list-response`,{
 						// 	error : false,
@@ -76,20 +77,67 @@ class Socket{
 					}); 
 				}else{
 					try{
-						// const [toSocketId, messageResult ] = await Promise.all([
-						// 	queryHandler.getUserInfo({
-						// 		uid: data.message.toUserId,
-						// 		socketId: true
-						// 	}),
-						// 	queryHandler.insertMessages(data)						
-						// ]);
-						const [messageResult ] = await Promise.all([
+						const [toSocketId, messageResult ] = await Promise.all([
+							queryHandler.getUserInfo({
+								uid: data.message.toUserId,
+								socketId: true
+							}),
 							queryHandler.insertMessages(data)						
 						]);
-						this.io.to(socket.id).emit(`add-message-response`,data);
-						// this.io.to(toSocketId).emit(`add-message-response`,data.message); 
+						// const [messageResult ] = await Promise.all([
+						// 	queryHandler.insertMessages(data)						
+						// ]);
+						this.io.to(socket.id).emit(`add-message-response`,data.message);
+						this.io.to(toSocketId).emit(`add-message-response`,data.message); 
+						this.io.to(toSocketId).emit(`chat-list-response`,{
+							error: false,
+							type: "add"
+						});
+						this.io.to(socket.id).emit(`chat-list-response`,{
+							error: false,
+							type: "add"
+						});
 					} catch (error) {
 						this.io.to(socket.id).emit(`add-message-response`,{
+							error : true,
+							message : CONSTANTS.MESSAGE_STORE_ERROR
+						}); 
+					}
+				}				
+			});
+
+			socket.on(`read-message`, async (data) => {
+				if (data._id === '') {
+					this.io.to(socket.id).emit(`read-message-response`,{
+						error : true,
+						message: CONSTANTS.MESSAGE_NOT_FOUND
+					}); 
+				}else{
+					try{
+						const [toSocketId, ReadMessageResult ] = await Promise.all([
+							queryHandler.getUserInfo({
+								uid: data.toUserId,
+								socketId: true
+							}),
+							queryHandler.readMessages(data)						
+						]);
+						// const [messageResult ] = await Promise.all([
+						// 	queryHandler.insertMessages(data)						
+						// ]);
+						this.io.to(socket.id).emit(`read-message-response`,data);
+						this.io.to(toSocketId).emit(`read-message-response`,data); 
+						this.io.to(toSocketId).emit(`chat-list-response`,{
+							error: false,
+							type: "read",
+							data: data
+						});
+						this.io.to(socket.id).emit(`chat-list-response`,{
+							error: false,
+							type: "read",
+							data: data
+						});
+					} catch (error) {
+						this.io.to(socket.id).emit(`read-message-response`,{
 							error : true,
 							message : CONSTANTS.MESSAGE_STORE_ERROR
 						}); 
@@ -108,13 +156,13 @@ class Socket{
 					this.io.to(socket.id).emit(`logout-response`,{
 						error : false,
 						message: CONSTANTS.USER_LOGGED_OUT,
-						userId: userId
+						userId: userId,
 					});
 
 					socket.broadcast.emit(`chat-list-response`,{
 						error : false ,
 						userDisconnected : true ,
-						userid : userId
+						userid : userId,
 					});
 				} catch (error) {
 					console.log(error);
@@ -134,7 +182,7 @@ class Socket{
 				socket.broadcast.emit(`chat-list-response`,{
 					error : false ,
 					userDisconnected : true ,
-					userid : socket.request._query['userId']
+					userid : socket.request._query['userId'],
 				});
 				
 			});

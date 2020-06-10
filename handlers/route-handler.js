@@ -199,6 +199,32 @@ class RouteHandler {
 		}
 	}
 
+	async readMessagesRouteHandler(request, response) {
+		const data = {
+			_id: request.body._id,
+			participants: request.body.participants
+		}
+		if (data._id == '') {
+			response.status(CONSTANTS.SERVER_ERROR_HTTP_CODE).json({
+				error: true,
+				message: CONSTANTS.USERID_NOT_FOUND
+			});
+		} else {
+			try {
+				const messagesResponse = await queryHandler.readMessages(data);
+				response.status(CONSTANTS.SERVER_OK_HTTP_CODE).json({
+					error: false,
+					messages: messagesResponse
+				});
+			} catch (error) {
+				response.status(CONSTANTS.SERVER_NOT_ALLOWED_HTTP_CODE).json({
+					error: true,
+					messages: CONSTANTS.USER_NOT_LOGGED_IN
+				});
+			}
+		}
+	}
+
 	routeNotFoundHandler(request, response) {
 		response.status(CONSTANTS.SERVER_NOT_FOUND_HTTP_CODE).json({
 			error: true,

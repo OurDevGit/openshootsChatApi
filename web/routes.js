@@ -25,6 +25,8 @@ class Routes{
 
 		this.app.post('/getMessages', routeHandler.getMessagesRouteHandler);
 
+		this.app.post('/readMessages', routeHandler.readMessagesRouteHandler);
+
 		this.app.get('*', routeHandler.routeNotFoundHandler);		
 	}
 

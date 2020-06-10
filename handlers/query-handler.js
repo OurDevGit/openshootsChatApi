@@ -167,11 +167,12 @@ class QueryHandler {
 			try {
 				const [DB, ObjectID] = await this.Mongodb.onConnect();
 				const data = {
-					"participants": { $in: [uid] }
+					// "participants": { $in: [uid] }
+					"participants.id": uid
 				};
 
-				DB.collection('messages').find(data, { "participants": 1, "meta": 1 })
-					.sort({"meta.date": -1})
+				DB.collection('messages').find(data)
+					.sort({ "meta.date": -1 })
 					.toArray((error, result) => {
 
 						if (error) {
@@ -216,10 +217,18 @@ class QueryHandler {
 						messages: [
 							messagePacket.message
 						],
-						participants: [messagePacket.message.fromUserId, messagePacket.message.toUserId],
+						// participants: [
+						// 	{id: messagePacket.message.fromUserId, date: new Date()}, 
+						// 	{id: messagePacket.message.toUserId, date: new Date("1990-1-1")}
+						// ],
+						participants: [
+							{ id: messagePacket.message.fromUserId, date: new Date() },
+							{ id: messagePacket.message.toUserId, date: new Date("1990-1-1") }
+						],
 						meta: {
 							lastmessage: messagePacket.message.message,
-							date: messagePacket.message.date
+							date: messagePacket.message.date,
+							fromUserId: messagePacket.message.fromUserId
 						}
 					};
 					DB.collection('messages').insertOne(newMessage, (err, result) => {
@@ -234,10 +243,11 @@ class QueryHandler {
 						messages: [
 							...messagePacket.chat.messages, messagePacket.message
 						],
-						participants: [messagePacket.message.fromUserId, messagePacket.message.toUserId],
+						participants: messagePacket.chat.participants,
 						meta: {
 							lastmessage: messagePacket.message.message,
-							date: messagePacket.message.date
+							date: messagePacket.message.date,
+							fromUserId: messagePacket.message.fromUserId
 						}
 					};
 					DB.collection('messages').update({ _id: ObjectID(messagePacket.chat.chatId) }, updateMessage, (err, result) => {
@@ -298,6 +308,28 @@ class QueryHandler {
 			try {
 				const [DB, ObjectID] = await this.Mongodb.onConnect();
 				DB.collection('messages').findOne({ _id: ObjectID(_id) }, (err, result) => {
+					DB.close();
+					if (err) {
+						reject(err);
+					}
+					resolve(result);
+				});
+			} catch (error) {
+				reject(error)
+			}
+		});
+	}
+
+	readMessages(chatInfo) {
+		const data = {
+			$set: {
+				participants: chatInfo.participants
+			}
+		};
+		return new Promise(async (resolve, reject) => {
+			try {
+				const [DB, ObjectID] = await this.Mongodb.onConnect();
+				DB.collection('messages').update({ _id: ObjectID(chatInfo._id) }, data, (err, result) => {
 					DB.close();
 					if (err) {
 						reject(err);
